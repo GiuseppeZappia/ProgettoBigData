@@ -2,6 +2,9 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import *#col, when, isnan, count, regexp_replace, mean, to_date,desc,sum 
 from pyspark.sql.types import IntegerType
 import os
+from builtins import round
+import streamlit as st
+import matplotlib.pyplot as plt
 
 spark = SparkSession.builder.appName("Progetto BigData").getOrCreate()
 spark.sparkContext.setLogLevel("OFF")
@@ -11,7 +14,7 @@ folder_path = r"C:\Users\giuse\Desktop\UNIVERSITA'\MAGISTRALE\1° ANNO\1° SEMES
 file_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.csv')]
 
 # Caricamento dei file CSV in Spark
-df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(5000000).drop("_c109").cache()  #eliminiamo ultima colonna che inferiva erroneamente per come era fatto il dataset --limito a 5mln cosi va 
+df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(1000).drop("_c109").cache()  #eliminiamo ultima colonna che inferiva erroneamente per come era fatto il dataset --limito a 5mln cosi va 
 
 
 #df = df.withColumn("FlightDate", to_date(col("FlightDate"), "yyyy-MM-dd"))
@@ -127,7 +130,7 @@ def velocita_media_totale():
 def velocita_media_per_tratta():
     velocita_filtrate=df.filter((col("Distance").isNotNull()) & (col("AirTime").isNotNull()))
     velocita=velocita_filtrate.withColumn("AverageSpeed", col("Distance") / (col("AirTime") / 60)).groupBy("Origin", "Dest").agg(avg("AverageSpeed").alias("AverageSpeedPerRoute")).orderBy(col("AverageSpeedPerRoute").desc()).limit(10).show()
-    return velocita_filtrate
+    return velocita
 
 #ATTENZIONE: IN QUESTE QUERY STO RESTITUENDO I PRIMI 10
 def stati_piu_visitati():
@@ -167,12 +170,11 @@ def mese_con_meno_cancellati():
     mesi=mesi_filtrati.groupBy("Month").count().orderBy(col("count").asc()).limit(1).show()
     return mesi
 
-#QUA PRENDERE CEIL/FLOOR O MEGLIO LE PRIME DUE DOPO LA VIRGOLA?
+
 def percentuale_voli_anticipo():
     voli_filtrati=df.filter(col("ArrDelayMinutes").isNotNull())
     voli= (voli_filtrati.filter(col("ArrDelayMinutes")==0).count()*100)/voli_filtrati.count()
-    print(voli)
-    return voli
+    return round(voli,2) #prime due cifre dopo virgola
 
 def totale_voli_in_ritardo():
     voli_filtrati=df.filter(col("ArrDelayMinutes").isNotNull())
@@ -537,36 +539,271 @@ def stati_con_maggiore_increm_ritardo_inverno_rispetto_estate():
     return result
 
 
-
 #AGGIUSTA LA RETURN A QUESTE 3 E MAGARI FAI RESTITUIRE UNO SOLO ALLA DUE SOTTO
-def stati_minore_ritardo_medio():
-    result = df.groupBy("OriginStateName").agg(avg("ArrDelay").alias("AvgArrivalDelay"))
-    return result.orderBy("AvgArrivalDelay", ascending=True).collect()
+def stati_con_minore_ritardo_arrivo():
+    stati_ritardo = df.filter(col("ArrDelayMinutes").isNotNull()) \
+        .groupBy("DestStateName") \
+        .agg(avg("ArrDelayMinutes").alias("MediaRitardoArrivo")) \
+        .orderBy(asc("MediaRitardoArrivo")) \
+        .limit(10)
+    stati_ritardo.select("DestStateName", "MediaRitardoArrivo").show(truncate=False)
+    return stati_ritardo
+
+def tratta_piu_comune_da_stato(stato):
+    tratta_comune = df.filter(col("OriginStateName") == stato) \
+        .groupBy("OriginCityName", "DestCityName") \
+        .count() \
+        .orderBy(desc("count")) \
+        .limit(1)
+    tratta_comune.select("OriginCityName", "DestCityName", "count").show(truncate=False)
+    return tratta_comune
+
+#FORSE INUTILE PERCHÈ IL CONTRARIO DI QUELLA COME ORIGINE SOPRA
+def tratta_piu_comune_per_stato(stato):
+    tratta_comune = df.filter(col("DestStateName") == stato) \
+        .groupBy("OriginCityName", "DestCityName") \
+        .count() \
+        .orderBy(desc("count")) \
+        .limit(1)
+    tratta_comune.select("OriginCityName", "DestCityName", "count").show(truncate=False)
+    return tratta_comune
 
 
-def tratte_piu_comuni_da_stato(stato):
-    result = df.filter(col("OriginStateName") == stato) \
-               .groupBy("OriginCityName", "DestCityName") \
-               .agg(count("*").alias("RouteCount")) \
-               .orderBy("RouteCount", ascending=False)
-    return result.collect()
+def stati_maggiore_traffico_aereo():
+    traffico = df.groupBy("OriginStateName").agg(count("*").alias("Partenze")) \
+        .join(
+            df.groupBy("DestStateName").agg(count("*").alias("Arrivi")),
+            col("OriginStateName") == col("DestStateName"),
+            "outer"
+        ) \
+        .withColumn("TotaleTraffico", col("Partenze") + col("Arrivi")) \
+        .orderBy(desc("TotaleTraffico")) \
+        .select("OriginStateName", "TotaleTraffico") \
+        .limit(10)
+    traffico.show(truncate=False)
+    return traffico
 
-def tratte_piu_comuni_per_stato(stato):
-    result = df.filter(col("DestStateName") == stato) \
-               .groupBy("OriginCityName", "DestCityName") \
-               .agg(count("*").alias("RouteCount")) \
-               .orderBy("RouteCount", ascending=False)
-    return result.collect()
+def stati_maggiore_efficienza():
+    efficienza = df.filter((col("ArrDelayMinutes").isNotNull()) & (col("DepDelayMinutes").isNotNull())) \
+        .groupBy("DestStateName") \
+        .agg(
+            (sum("ArrDelayMinutes") + sum("DepDelayMinutes")).alias("TotaleRitardi"),
+            count("*").alias("TotaleVoli")
+        ) \
+        .withColumn("Efficienza", col("TotaleVoli")*100 / col("TotaleRitardi")) \
+        .orderBy(desc("Efficienza")) \
+        .limit(10)
+    efficienza.select("DestStateName", "Efficienza").show(truncate=False)
+    return efficienza
+
+
+#-----------------------------------------------------------------------GUI----------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Layout della pagina
+st.set_page_config(
+    page_title="Dashboard Voli - Big Data",
+    page_icon="✈️",
+    layout="wide",
+)
+
+
+import pydeck as pdk
+# Funzione per convertire un DataFrame Spark in pandas
+def spark_to_pandas(spark_df):
+    """
+    Converte un DataFrame Spark in un DataFrame Pandas, con un limite al numero di righe.
+    Necessario per l'integrazione con Streamlit.
+    """
+    return spark_df.toPandas()
+
+# # Funzione per calcolare percentuali
+# def calcola_percentuali():
+#     totale_voli = df.count()
+#     cancellati = df.filter(col("Cancelled") == 1).count()
+#     in_ritardo = df.filter(col("ArrDelayMinutes") > 0).count()
+#     in_orario = totale_voli - cancellati - in_ritardo
+    
+#     return {
+#         "cancellati": round((cancellati / totale_voli) * 100, 2),
+#         "ritardo": round((in_ritardo / totale_voli) * 100, 2),
+#         "in_orario": round((in_orario / totale_voli) * 100, 2),
+#     }
+
+# Funzione per creare la mappa
+# def crea_mappa():
+#     mappa_dati = df.select("OriginLat", "OriginLon", "DestLat", "DestLon").limit(100).toPandas()
+#     mappa_dati = mappa_dati.rename(columns={
+#         "OriginLat": "lat", "OriginLon": "lon",
+#         "DestLat": "lat_dest", "DestLon": "lon_dest"
+#     })
+
+#     # Crea una mappa con PyDeck
+#     view_state = pdk.ViewState(
+#         latitude=mappa_dati["lat"].mean(),
+#         longitude=mappa_dati["lon"].mean(),
+#         zoom=3,
+#         pitch=50,
+#     )
+#     layer = pdk.Layer(
+#         "ArcLayer",
+#         data=mappa_dati,
+#         get_source_position=["lon", "lat"],
+#         get_target_position=["lon_dest", "lat_dest"],
+#         get_width=2,
+#         get_tilt=15,
+#         get_color=[255, 100, 100],
+#     )
+#     return pdk.Deck(layers=[layer], initial_view_state=view_state)
+import plotly.graph_objects as go
+def widget_percentuale_rotondo(percentuale, titolo):
+    """
+    Crea un widget rotondo (grafico a ciambella) per mostrare una percentuale.
+    """
+    fig = go.Figure()
+
+    # Aggiungi il grafico ad anello
+    fig.add_trace(go.Pie(
+        values=[percentuale, 100 - percentuale],  # Percentuale e spazio rimanente
+        labels=["", ""],  # Nascondiamo le etichette
+        hole=0.7,  # Spessore del cerchio interno
+        marker=dict(colors=["#4CAF50", "#EAEAEA"]),  # Colore del valore e dello sfondo
+        textinfo="none",  # Nascondiamo le informazioni di testo predefinite
+    ))
+
+    # Personalizza il layout
+    fig.update_layout(
+        showlegend=False,  # Nasconde la legenda
+        margin=dict(t=10, b=10, l=10, r=10),  # Riduce i margini
+        annotations=[
+            dict(
+                text=f"<b>{percentuale}%</b>",  # Testo al centro
+                x=0.5, y=0.5, font_size=20, showarrow=False
+            ),
+            dict(
+                text=titolo,  # Testo del titolo
+                x=0.5, y=0.29, font_size=12, showarrow=False
+            )
+        ]
+    )
+    return fig
+
+import altair as alt
+import plotly.express as px
+import pandas as pd
+def make_donut(input_response, input_text, input_color):
+  if input_color == 'blue':
+      chart_color = ['#29b5e8', '#155F7A']
+  if input_color == 'green':
+      chart_color = ['#27AE60', '#12783D']
+  if input_color == 'orange':
+      chart_color = ['#F39C12', '#875A12']
+  if input_color == 'red':
+      chart_color = ['#E74C3C', '#781F16']
+    
+  source = pd.DataFrame({
+      "Topic": ['', input_text],
+      "% value": [100-input_response, input_response]
+  })
+  source_bg = pd.DataFrame({
+      "Topic": ['', input_text],
+      "% value": [100, 0]
+  })
+    
+  plot = alt.Chart(source).mark_arc(innerRadius=45, cornerRadius=25).encode(
+      theta="% value",
+      color= alt.Color("Topic:N",
+                      scale=alt.Scale(
+                          #domain=['A', 'B'],
+                          domain=[input_text, ''],
+                          # range=['#29b5e8', '#155F7A']),  # 31333F
+                          range=chart_color),
+                      legend=None),
+  ).properties(width=130, height=130)
+    
+  text = plot.mark_text(align='center', color="#29b5e8", font="Lato", fontSize=32, fontWeight=700, fontStyle="italic").encode(text=alt.value(f'{input_response} %'))
+  plot_bg = alt.Chart(source_bg).mark_arc(innerRadius=45, cornerRadius=20).encode(
+      theta="% value",
+      color= alt.Color("Topic:N",
+                      scale=alt.Scale(
+                          # domain=['A', 'B'],
+                          domain=[input_text, ''],
+                          range=chart_color),  # 31333F
+                      legend=None),
+  ).properties(width=130, height=130)
+  return plot_bg + plot + text
 
 
 
-#percentuali_cause_ritardo(data_inizio="2013-01-01",data_fine="2013-12-31")
-# numero_voli_periodo(data_inizio="2013-01-01")
-# numero_voli_periodo(data_inizio="2013-01-01", data_fine="2013-01-31")
-# ritardo_medio_per_stagione(aeroporto="JFK")
-# ritardo_medio_partenza_stato("Texas")
-tratte_piu_comuni_da_stato("Texas")
-tratte_piu_comuni_per_stato("Texas")
-stati_minore_ritardo_medio()
-#percentuali_cause_ritardo(stato="Texas")
-#stati_con_maggiore_increm_ritardo_inverno_rispetto_estate()
+# Menu orizzontale con Tabs
+tab1, tab2, tab3, tab4, tab5= st.tabs(["Home", "Analisi Ritardi", "Mappa Voli", "Grafici Personalizzati","Machine Learning"])
+
+# --- Home Page ---
+with tab1:
+    st.title("Dashboard Voli - Panoramica")
+    
+    # Metriche principali
+    st.write("### Panoramica")
+    colonne = st.columns((1.5, 4.5, 2), gap='medium')
+
+    with colonne[0]:
+        st.markdown('#### Percentuali')
+        perc_anticipo=percentuale_voli_anticipo()
+        # in_anticipo=make_donut(perc_anticipo,"In anticipo","green")
+        # st.altair_chart(in_anticipo)
+        st.plotly_chart(widget_percentuale_rotondo(perc_anticipo,"Voli in anticipo"))
+    # Tabella con un'anteprima del dataset
+    st.write("### Anteprima Dataset")
+    
+
+# # --- Analisi Ritardi ---
+# with tab2:
+#     st.title("Analisi Ritardi")
+    
+#     # Selezione di una query
+#     query = st.selectbox(
+#         "Seleziona Analisi",
+#         [
+#             "Tratte con più ritardi totali",
+#             "Tratte con meno ritardi alla partenza",
+#         ]
+#     )
+#     if query == "Tratte con più ritardi totali":
+#         risultati = tratte_con_piu_ritardi_totali()
+#         st.table(spark_to_pandas(risultati))
+#     elif query == "Tratte con meno ritardi alla partenza":
+#         risultati = tratte_con_meno_ritardi_partenza()
+#         st.table(spark_to_pandas(risultati))
+
+# # --- Mappa Voli ---
+# with tab3:
+#     st.title("Mappa Interattiva dei Voli")
+#     st.pydeck_chart(crea_mappa())
+
+# # --- Grafici Personalizzati ---
+# with tab4:
+#     st.title("Grafici Personalizzati")
+    
+#     # Ritardi Medi per Stagione
+#     st.write("### Ritardi Medi per Stagione")
+#     stagione_data = ritardo_medio_per_stagione()
+#     stagioni = [item["Stagione"] for item in stagione_data]
+#     ritardi = [item["AvgDelay"] for item in stagione_data]
+
+#     fig, ax = plt.subplots()
+#     ax.bar(stagioni, ritardi, color="skyblue")
+#     ax.set_xlabel("Stagioni")
+#     ax.set_ylabel("Ritardo Medio (minuti)")
+#     ax.set_title("Ritardi Medi per Stagione")
+#     st.pyplot(fig)
+
+# Footer
+st.markdown("---")
+st.write("Progetto Big Data - Analisi Ritardi Voli ✈️")

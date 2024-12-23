@@ -11,77 +11,158 @@ LEGENDA: V--> PRESENTE ANCHE IN SEZIONE VOLI
 -------------------SCHERMATA HOME----------------
 
 1) Individuare il giorno della settimana con più voli. (V)       ****NUM DISPARI MOMI****
+
+&&&&FATTA
 2) Trovare il volo con la distanza massima percorsa (E MINIMA) (V) ****NUM PARI GZ****
+
 3) Individuare i 10 aeroporti con il maggior traffico come destinazione (EVENTUALMENTE ANCHE CONSIDERATI COME SCALI?)
+
+
+$$$GRAFICO DA FAREREEEE
 4) Confrontare i ritardi medi nei giorni feriali e nel fine settimana (FARLO ANCHE CON GIORNI DI FESTA? OPPURE ESTATE) (O)
+
 5) Identificare le rotte (origine-destinazione) più comuni. (GRAFICIO ISTOGTRAMA CON LE PRINCIPALI? (MAGARI SE NON LE ROTTE SI PUO FARE LE DESTINAZIONI PIU COMUNI)) (V,C)
+
+&&&&&&FATTA
 6) Tratte con più ritardi (e con meno) (V)
+
 7) Compagnia con più voli cancellati e percentuali cause in grafichetto/popup (C)
+
+$$$$GRAFICO DA FARE
 8) Grafico compagnie più utilizzate (ISTOGRAMMA?? PERCENTUALI???)
+
 9) Compagnia aerea con più km percorsi (C)
+
+&&&&&&FATTA
 10) Aereo con più km percorsi (V)
+
 11) Stato più visitato (ST)
+
+&&&PER TRATTA E TOTALE FATTA
 12) Calcolare la velocità media degli aerei/voli  basandosi sui dati di distanza e tempo effettivo di volo (V)
+
 13) Trovare gli stati con il minor ritardo medio (ST)
+
+&&&&FATTO
 14) Identificare gli stati con il maggior numero di voli come destinazione (piu visitati) (ST)
 
 
 -------------------VOLI----------------
 
 1) Calcolare il numero totale di voli per mese
+
+&&&FATTO
 2) Individuare il giorno della settimana con più voli. (SH)
+
 3) Trovare il volo con la distanza massima percorsa (E MINIMA) (SH)
+
+&&&FATTO
 4) Contare quanti voli sono stati cancellati in totale (AE)
+
 5) Calcolare la percentuale di voli in orario (ritardo ≤ 0 minuti) (AE,C,O)
+
+&&&&&FATTO
 6) Trovare il mese con più voli cancellati ( e con meno)
+
 7) Identificare le rotte (origine-destinazione) più comuni. (GRAFICIO ISTOGTRAMA CON LE PRINCIPALI? (MAGARI SE NON LE ROTTE SI PUO FARE LE DESTINAZIONI PIU COMUNI)) (SH,C)
+
+&&&&FATTO
 8) Tratte con più ritardi (e con meno) (SH)
+
 9) Analizzare le cancellazioni di voli e collegarle al giorno della settimana (GRAFICO DI CORRELAZIONE TRA LE DUE COSE ?) (O)
+
+&&&&FATTO
 10) Aereo con più km percorsi (SH)
+
 11) Mappa dove si sceglie aereo e mostra le tratte di quell'aereo (COLLEGATE DA ARCHI DI DIVERSO COLORE ?? OPPURE LO STESSO MA CON MAPPA GRANDE COSI SI CAPISCE?)--eventualmente per periodi
-12) Percentuale di voli che atterrano in anticipo
+
+&&&&FATTO
+12) Percentuale di voli che atterrano in anticipo e quella in ritardo
+
 13) Numero di voli che hanno subito un ritardo al decollo ma sono atterrati in anticipo
+
+&&&PER TRATTA E TOTALE FATTA
 14) Calcolare la velocità media degli aerei/voli  basandosi sui dati di distanza e tempo effettivo di volo (SH)
 
 
 -------------------AEROPORTI----------------
 
 1) Calcolare la media dei ritardi alla partenza per aeroporto di origine (MAGARI SCEGLIE AEROPORTO E FACCIAMO VEDERE TUTTI I DATI PER QUELLO TRA CUI QUESTI)
+
+&&&&fatta
 2) Ritardi medi al decollo per l'aeroporto
+
 3) Cause più comuni di ritardo con percentuali (widget tondi) "in questo aeroporto i ritardi sono per il 70% dovuti al tempo …"
+
+&&&&FATTO
 4) Contare quanti voli sono stati cancellati nell'aeroporto (V)
+
 5) Calcolare la percentuale di voli in orario che arrivano in quello aeroporto (ritardo ≤ 0 minuti) (V,C,O)
+
+$$$$$$$$$$GRAFICO 
 6) GRAFICO DEI GIORNI FESTIVI (4 luglio, natale ecc HAI SCREEN) CON NUMERO DI VOLI PARTITI E ANCHE MESSO LA MEDIA DEI VOLI PARTITI QUOTIDIANAMENTE (C,O,ST)
 
 
 ----------------COMPAGNIE AEREE----------------
 
 1) Elencare le compagnie aeree con il maggior numero di voli.
+
+&&&&&FATTA
 2) Calcolare la percentuale di voli in orario della compagnia (ritardo ≤ 0 minuti) (V,AE,O)
+
 3) Identificare le rotte (origine-destinazione) più comuni della compagnia aerea. (GRAFICIO ISTOGTRAMA CON LE PRINCIPALI? (MAGARI SE NON LE ROTTE SI PUO FARE LE DESTINAZIONI PIU COMUNI)) (SH,V)
+
+&&&&FATTO
 4) Cause più comuni di ritardo e in generale analisi su ritardi e cause (O)
+
 5) Calcolare il tempo medio di rullaggio al decollo (TaxiOut) per compagnia aerea
+
+&&&&FATTO
 6) Numero di voli cancellati e cause relative (query analoghe a quanto fatto con ritardi)? (SH)
+
 7) Compagnia aerea con più km percorsi (SH) (possibilità di scegliere giorno-mese ecc e vedere quanto ha percorso)
+
+&&&&FATTO
 8) Percentuali di voli deviati 
+
 9) Stima del trend e della stagionalità per compagnia aerea (con grafico) (avevamo inizialmente scritto di farla sulle singole tratte, sus?)  
+
+&&&&FATTO
 10) Calcolare la media del tempo di volo (AirTime) per ogni compagnia
+
 11) GRAFICO DEI GIORNI FESTIVI (4 luglio, natale ecc HAI SCREEN) CON NUMERO DI VOLI PARTITI E ANCHE MESSO LA MEDIA DEI VOLI PARTITI QUOTIDIANAMENTE (C,O,ST)
+
+$$$$$GRAFICO
 12) QUANDO SI APRE LA PAGINA DELLA COMPAGNIA MAPPA CON VOLO CHE HA PERCIRSO DISTANZA PIU LUNGA CON LE DUE CITTA COLLEGATE CON ARCO
 
 
 ----------------ORARI (COSI COMPRENDE SIA RITARDI CHE TUTTO CIO CHE HA A CHE FARE CON ORARI??)/SOLO RITARDI??----------------
 
 1) Calcolare il ritardo medio per fascia oraria di partenza 
-2) Calcolare la percentuale di voli in orario (ritardo ≤ 0 minuti) (V,AE,C)
+
+&&&FATTA
+2) Calcolare la percentuale di voli in orario (ritardo ≤ 0 minuti) (V,AE,C) [MODELLATO COME SCEGLI PERIODI E HAI PERCENTUALE]
+
 3) Analizzare la distribuzione dei ritardi in base alla compagnia aerea. (QUINDI SCEGLI SINGOLA COMPAGNIA ED HAI TUTTI DATI PIU SPECIFICI SU QUELLA TRA CUI QUESTO - EVENTUALMENTE CONFRONTO CON ALTRA COMPAGNIA TI AGGIUNGE AL GRAFICO DELLA DISTRIBUZIONE QUELLA COSI CONFRONTI)
+
+$$$$GRAFICO
 4) Confrontare i ritardi medi nei giorni feriali e nel fine settimana (FARLO ANCHE CON GIORNI DI FESTA? OPPURE ESTATE) (SH)
+
 5) Cause più comuni di ritardo e in generale analisi su ritardi e cause (C)
+
+$$$GRAFICO
 6) Analizzare le cancellazioni di voli e collegarle al giorno della settimana (GRAFICO DI CORRELAZIONE TRA LE DUE COSE ?) (V)
+
 7) Utente sceglie fascia oraria e mostra voli partiti dopo quell'ora o in quella fascia oraria (la mappa con le tratte---magari premi sulla tratta sulla mappa e ti dice dettagli)(LI MOSTRIAMO PER TUTTI, SE VUOLE PUO SPECIFICARE COMPAGNIA E/O AEROPORTO)
+
+&&&&FATTA
 8) NUMERO DI AEREI CHE HANNO FATTO UN TOT DI RITARDO SCELTO DELL'UTENTE SIA ALLA PARTENZA CHE ALL'ARRIVO (MAGARI POI AGGIUNGIAMO ANCHE LA POSSIBILITA SOLITA DI FARLO SPECIFICANDO SOLO AEROPORTO COMPAGNIA ECC)
+
 9) GRAFICO DEI GIORNI FESTIVI (4 luglio, natale ecc HAI SCREEN) CON NUMERO DI VOLI PARTITI E ANCHE MESSO LA MEDIA DEI VOLI PARTITI QUOTIDIANAMENTE (AE,C,ST)
+
+&&&FATTA
 10) Confrontare i ritardi medi invernali con quelli estivi
+
 11) ANALIZZARE L'EFFETTO DELLE FASCE ORARIE (DEPTIMEBLK) SUI RITARDI CIOÈ (Quando parliamo di analizzare l'effetto delle fasce orarie (DepTimeBlk) sui ritardi, intendiamo studiare se l'ora in cui un volo è schedulato (organizzata in fasce orarie) ha un impatto significativo sul ritardo. Questo tipo di analisi può rivelare trend interessanti, ad esempio:
 I voli mattutini potrebbero essere più puntuali rispetto a quelli serali.
 Le fasce di punta (es. 8:00-10:00) potrebbero presentare ritardi maggiori a causa del traffico aereo.
@@ -106,26 +187,51 @@ Modello suggerito: Albero di decisione (ml.classification.DecisionTreeClassifier
 ----------------STATI----------------
 
 1) Stato più visitato, dire anche quanto nei mesi,gorni ecc. se selezionato (SH) 
+
+&&&FATTO
 2) Calcolare il ritardo medio alla partenza per ogni stato di origine (anche destinazione ?)
+
 3) Confrontare i ritardi medi per stato in base al giorno della settimana (DayOfWeek) 
+
+&&&&FATTO
 4) Analizzare gli stati con il maggiore incremento di ritardi nei mesi invernali (dicembre-gennaio-febbraio) 
+
 5) Contare il numero totale di voli per stato di origine (piu "lasciati")
+
+&&&&FATTO
 6) Trovare gli stati con il minor ritardo medio (SH)
+
 7) Identificare gli stati con il maggior numero di voli come destinazione (piu visitati)
+
+&&&&FATTO
 8) Determinare gli stati con il maggiore traffico aereo (origine e destinazione combinati)
+
 9) Identificare gli stati con la percentuale più alta di voli cancellati (Cancelled)
+
+&&&&FATTO
 10) Percentuali cause cancellazioni e ritardi
+
 11) Analizzare il rapporto tra voli cancellati e voli totali per ogni stato
+
+&&&&FATTO
 12) Rotte piu comuni con lui come origine e come destinazione
+
 13) GRAFICO DEI GIORNI FESTIVI (4 luglio, natale ecc HAI SCREEN) CON NUMERO DI VOLI PARTITI E ANCHE MESSO LA MEDIA DEI VOLI PARTITI QUOTIDIANAMENTE (C,O,AE)
+
+&&&&FATTO
 14) Trovare gli stati con la maggiore efficienza (ritardi minimi rispetto al volume di voli)
+
 15) Posto che hai impiegato piu tempo e meno a raggiungere
+
 16) Creare un grafico interattivo che mostra il traffico aereo tra stati su una mappa
+
 17) Analizzare la stagionalità dei voli in base a uno stato specifico
 
 CONFRONTI TRA LE VARIE COSE 
 
 
+
+TUTTE QUELLE SUI RITARDI FALLE ANCHE CON CANCELLAZIONE?
 
 CHIEDI A CHAT QUERY CHE RIGUARDANO GLI STATI
 FASCIA ORARIA CON PIU VOLI,,RITARDO ECC.?? CERCA DI CAPIRE COME TROVARE LA FASCIA ORARIA (DIMENSIONE ECC) C'ERA IN STAGIONI ANCHE STA COSA SIMILE 
