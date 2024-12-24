@@ -1,30 +1,84 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import *#col, when, isnan, count, regexp_replace, mean, to_date,desc,sum 
-from pyspark.sql.types import IntegerType
-import os
-from builtins import round
-import streamlit as st
-import matplotlib.pyplot as plt
+# Header Dataset: Year,"Quarter","Month","DayofMonth","DayOfWeek","FlightDate","Reporting_Airline","DOT_ID_Reporting_Airline",
+# "IATA_CODE_Reporting_Airline","Tail_Number","Flight_Number_Reporting_Airline","OriginAirportID","OriginAirportSeqID","OriginCityMarketID",
+# "Origin","OriginCityName","OriginState","OriginStateFips","OriginStateName","OriginWac","DestAirportID","DestAirportSeqID",
+# "DestCityMarketID","Dest","DestCityName","DestState","DestStateFips","DestStateName","DestWac","CRSDepTime","DepTime","DepDelay",
+# "DepDelayMinutes","DepDel15","DepartureDelayGroups","DepTimeBlk","TaxiOut","WheelsOff","WheelsOn","TaxiIn","CRSArrTime","ArrTime",
+# "ArrDelay","ArrDelayMinutes","ArrDel15","ArrivalDelayGroups","ArrTimeBlk","Cancelled","CancellationCode","Diverted","CRSElapsedTime",
+# "ActualElapsedTime","AirTime","Flights","Distance","DistanceGroup","CarrierDelay","WeatherDelay","NASDelay","SecurityDelay",
+# "LateAircraftDelay","FirstDepTime","TotalAddGTime","LongestAddGTime","DivAirportLandings","DivReachedDest","DivActualElapsedTime",
+# "DivArrDelay","DivDistance","Div1Airport","Div1AirportID","Div1AirportSeqID","Div1WheelsOn","Div1TotalGTime","Div1LongestGTime",
+# "Div1WheelsOff","Div1TailNum","Div2Airport","Div2AirportID","Div2AirportSeqID","Div2WheelsOn","Div2TotalGTime","Div2LongestGTime",
+# "Div2WheelsOff","Div2TailNum","Div3Airport","Div3AirportID","Div3AirportSeqID","Div3WheelsOn","Div3TotalGTime","Div3LongestGTime",
+# "Div3WheelsOff","Div3TailNum","Div4Airport","Div4AirportID","Div4AirportSeqID","Div4WheelsOn","Div4TotalGTime","Div4LongestGTime",
+# "Div4WheelsOff","Div4TailNum","Div5Airport","Div5AirportID","Div5AirportSeqID","Div5WheelsOn","Div5TotalGTime","Div5LongestGTime",
+# "Div5WheelsOff","Div5TailNum",
 
+
+import os
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, count, mean, sum, asc, desc, when,avg
+import time
+from geopy import Nominatim
+import pandas as pd
+from pyspark.sql.functions import round as pyspark_round
+
+
+# Funzione per creare una sessione Spark
+# def get_spark_session_TUTTO():
+#     return SparkSession.builder \
+#         .appName("Progetto BigData") \
+#         .config("spark.driver.memory", "4g") \
+#         .config("spark.executor.memory", "4g") \
+#         .getOrCreate()
+
+
+# spark = get_spark_session_TUTTO()
+# spark.sparkContext.setLogLevel("OFF")
+
+# folder_path = r"C:\Users\xdomy\Desktop\Università\MAGISTRALE\1° Anno 1° Semestre\Modelli e Tecniche per Big Data\Progetto Voli\Dataset Voli"
+
+
+#CODICE GZ
 spark = SparkSession.builder.appName("Progetto BigData").getOrCreate()
 spark.sparkContext.setLogLevel("OFF")
 
-# Lista dei file CSV
 folder_path = r"C:\Users\giuse\Desktop\UNIVERSITA'\MAGISTRALE\1° ANNO\1° SEMESTRE\MODELLI E TECNICHE PER BIG DATA\PROGETTO\DATI"
 file_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.csv')]
 
-# Caricamento dei file CSV in Spark
-df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(1000).drop("_c109").cache()  #eliminiamo ultima colonna che inferiva erroneamente per come era fatto il dataset --limito a 5mln cosi va 
+#df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).drop("_c109").cache()
+df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(100000).drop("_c109").cache()
 
 
 #df = df.withColumn("FlightDate", to_date(col("FlightDate"), "yyyy-MM-dd"))
 #df.select("FlightDate").show(5, truncate=False)
 
 #EVENTUALMENTE QUA FARE CASTING SE VOGLIAMO RISULTATI TIPO RITARDI NON COME DOUBLE
-#df = df.withColumn("ArrDelayMinutes", df["ArrDelayMinutes"].cast(IntegerType()))
-#df.printSchema()
+# df = df.withColumn("ArrDelayMinutes", df["ArrDelayMinutes"].cast(IntegerType()))
+# df.printSchema()
+
+
+
 
 #---------------------------------------------QUERY PER VERIFICARE SE IL DATASET HA BISOGNO DI PREPROCESSING---------------------------------------------
+
+coordinateAeroporti = "C:/Users/giuse/Desktop/UNIVERSITA'/MAGISTRALE/1° ANNO/1° SEMESTRE/MODELLI E TECNICHE PER BIG DATA/PROGETTO/CODICE/coordinates.csv"
+# coordinateAeroporti = "C:/Users/xdomy/Desktop/Università/MAGISTRALE/1° Anno 1° Semestre/Modelli e Tecniche per Big Data/Progetto Voli/ProgettoBigData/coordinates.csv"
+
+# Returns the coordinates for a given airport
+def coordinates():
+    locator = Nominatim(user_agent="myNewGeocoder")
+    righe_filtrate=df.dropDuplicates(["Origin", "Dest"]).collect()
+    for riga in righe_filtrate:
+        time.sleep(1)
+        # Coordinates for Origin
+        found = locator.geocode(riga["Origin"] + " Airport "+ riga["OriginCityName"], timeout=None)
+        if found is None:
+            time.sleep(1)
+            found = locator.geocode(riga["OriginCityName"], timeout=None)
+        result = [found.latitude, found.longitude]
+        dfRes = pd.DataFrame({'OriginLatitude': [result[0]], 'OriginLongitude': [result[1]]})
+    return dfRes
+
 
 def conta_righe_totali():
     return df.count()
@@ -51,6 +105,7 @@ def analisi_dataset():
         anomalies = df.filter(eval(condition))  # eval valuta la condizione scritta come stringa
         ##anomalies.show(truncate=False)
         print(f"Numero di anomalie in {column}: {anomalies.count()}")
+
 
 
 
@@ -139,9 +194,16 @@ def stati_piu_visitati():
   stati.show()
   return stati
 
+def compagnie_piu_voli_fatti():
+  compagnie_filtrate= df.filter(col("Reporting_Airline").isNotNull())
+  compagnie=compagnie_filtrate.groupBy("Reporting_Airline").count().orderBy(col("count").desc()).limit(10)
+  compagnie.show()
+  return compagnie
+
 def citta_piu_visitate():
   citta_filtrate= df.filter(col("DestCityName").isNotNull())
-  citta=citta_filtrate.groupBy("DestCityName").count().orderBy(col("count").desc()).limit(10).show()
+  citta=citta_filtrate.groupBy("DestCityName").count().orderBy(col("count").desc()).limit(10)
+  citta.show()
   return citta 
 
 def giorno_della_settimana_con_piu_voli():
@@ -467,15 +529,15 @@ def percentuali_cause_ritardo(filtro_compagnia=None, causa_specifica=None, data_
     # Calcolo percentuali
     if causa_specifica:
         ritardi_percentuali = ritardi_cause.select(
-            (col(causa_specifica) / ritardi_somma * 100).alias(f"{causa_specifica}_Percent")
+            pyspark_round((col(causa_specifica) / ritardi_somma * 100),2).alias(f"{causa_specifica}_Percent")
         )
     else:
         ritardi_percentuali = ritardi_cause.select(
-            (col("CarrierDelay") / ritardi_somma * 100).alias("CarrierDelay_Percent"),
-            (col("WeatherDelay") / ritardi_somma * 100).alias("WeatherDelay_Percent"),
-            (col("NASDelay") / ritardi_somma * 100).alias("NASDelay_Percent"),
-            (col("SecurityDelay") / ritardi_somma * 100).alias("SecurityDelay_Percent"),
-            (col("LateAircraftDelay") / ritardi_somma * 100).alias("LateAircraftDelay_Percent")
+            pyspark_round((col("CarrierDelay") / ritardi_somma * 100),2).alias("Carrier"),
+            pyspark_round((col("WeatherDelay") / ritardi_somma * 100),2).alias("Weather"),
+            pyspark_round((col("NASDelay") / ritardi_somma * 100),2).alias("NAS"),
+            pyspark_round((col("SecurityDelay") / ritardi_somma * 100),2).alias("Security"),
+            pyspark_round((col("LateAircraftDelay") / ritardi_somma * 100),2).alias("Late Aircraft")
         )
     ritardi_percentuali.show()
     return ritardi_percentuali
@@ -523,7 +585,7 @@ def stati_con_maggiore_increm_ritardo_inverno_rispetto_estate():
                       .groupBy("OriginStateName") \
                       .agg(avg("ArrDelayMinutes").alias("WinterAvgDelay"))
     
-    # FiltrO per mesi estivi 
+    # Filtro per mesi estivi 
     mesi_estivi = [6, 7, 8]
     ritardi_estivi = df.filter(col("Month").isin(mesi_estivi)) \
                       .groupBy("OriginStateName") \
@@ -556,7 +618,7 @@ def tratta_piu_comune_da_stato(stato):
         .count() \
         .orderBy(desc("count")) \
         .limit(1)
-    tratta_comune.select("OriginCityName", "DestCityName", "count")
+    tratta_comune.select("OriginCityName", "DestCityName", "count").show(truncate=False)
     return tratta_comune
 
 #FORSE INUTILE PERCHÈ IL CONTRARIO DI QUELLA COME ORIGINE SOPRA
@@ -598,6 +660,21 @@ def stati_maggiore_efficienza():
     return efficienza
 
 
+#---------------------------------------------QUERY GENERALI MOMI---------------------------------------------
+
+
+#------------------------QUERY SCHERMATA HOME#------------------------
+
+# Giorno della settimana con più voli
+def giornoNumMaxVoli():
+    tratte_filtrate=df.filter(col("DayOfWeek").isNotNull())
+    voli_per_giorno = tratte_filtrate.groupBy("DayOfWeek").agg(count("*").alias("NumeroVoli")) # Raggruppa per il giorno della settimana e conta il numero di voli
+    giorno = voli_per_giorno.orderBy(col("NumeroVoli").desc()).limit(1).show(truncate=True) # Ordina i risultati per il numero di voli in ordine decrescente e prende il primo, .collect() restituisce una lista di righe in formato python
+    #giorno_con_piu_voli = giorno[0]["DayOfWeek"]
+    #return giorno_con_piu_voli  mettiamo queste due righe quando dovremo ritornare il numero, inserendo quindi la collect nella variabile giorno, cosi mostra solo a grafico
+    return giorno
+
+# 10 aeroporti con il maggior traffico come destinazione  RENDERE GENERALE
 def dieciAeroportiMaggiorTrafficoDestinazione():
     tratte_filtrate = df.filter(col("Dest").isNotNull())
     aeroporti_destinazione = tratte_filtrate.groupBy("Dest").agg(count("*").alias("NumeroVoli")) # Raggruppa per aeroporto di destinazione e conta i voli
@@ -605,6 +682,7 @@ def dieciAeroportiMaggiorTrafficoDestinazione():
     dieci_aeroporti.show(truncate=True) # Mostra i risultati in una tabella
     return dieci_aeroporti # Ritorna il DataFrame dei 10 aeroporti (per ulteriori elaborazioni, se necessario)
 
+# Rotte (origine-destinazione) più comuni
 def rottePiuComuni():
     tratte_filtrate = df.filter(col("Origin").isNotNull() & col("Dest").isNotNull())
     rotte = tratte_filtrate.groupBy("Origin", "Dest").agg(count("*").alias("NumeroVoli")) # Raggruppa per rotta e conta i voli
@@ -612,215 +690,144 @@ def rottePiuComuni():
     rotte_piu_comuni.show(truncate=True) # Mostra i risultati in una tabella
     return rotte_piu_comuni # Ritorna il DataFrame delle 10 rotte più comuni (per ulteriori elaborazioni, se necessario)
 
-
-#-----------------------------------------------------------------------GUI----------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Layout della pagina
-import altair as alt
-import plotly.express as px
-import pandas as pd
-import plotly.graph_objects as go
-from geopy import Nominatim
-import time
-import pydeck as pdk
-
-st.set_page_config(
-    page_title="Dashboard Voli - Big Data",
-    page_icon="✈️",
-    layout="wide",
-)
-
-coordinateAeroporti = "C:/Users/giuse/Desktop/UNIVERSITA'/MAGISTRALE/1° ANNO/1° SEMESTRE/MODELLI E TECNICHE PER BIG DATA/PROGETTO/CODICE/coordinates.csv"
-
-def converti_giorno(numero):
-    giorni = {
-        1: "Lunedì",
-        2: "Martedì",
-        3: "Mercoledì",
-        4: "Giovedì",
-        5: "Venerdì",
-        6: "Sabato",
-        7: "Domenica"
-    }
-    return giorni.get(numero, "Sconosciuto")
-
-# Returns the coordinates for a given airport
-def coordinates():
-    locator = Nominatim(user_agent="myNewGeocoder")
-    righe_filtrate=df.dropDuplicates(["Origin", "Dest"]).collect()
-    for riga in righe_filtrate:
-        time.sleep(1)
-        # Coordinates for Origin
-        found = locator.geocode(riga["Origin"] + " Airport "+ riga["OriginCityName"], timeout=None)
-        if found is None:
-            time.sleep(1)
-            found = locator.geocode(riga["OriginCityName"], timeout=None)
-        result = [found.latitude, found.longitude]
-        dfRes = pd.DataFrame({'OriginLatitude': [result[0]], 'OriginLongitude': [result[1]]})
-    return dfRes
-
-
-
-# Funzione per convertire un DataFrame Spark in pandas
-def spark_to_pandas(spark_df):
-    """
-    Converte un DataFrame Spark in un DataFrame Pandas, con un limite al numero di righe.
-    Necessario per l'integrazione con Streamlit.
-    """
-    return spark_df.toPandas()
-
-
-def make_donut(input_response, input_text, input_color):
-  if input_color == 'blue':
-      chart_color = ['#29b5e8', '#155F7A']
-  if input_color == 'green':
-      chart_color = ['#27AE60', '#12783D']
-  if input_color == 'orange':
-      chart_color = ['#F39C12', '#875A12']
-  if input_color == 'red':
-      chart_color = ['#E74C3C', '#781F16']
-    
-  source = pd.DataFrame({
-      "Topic": ['', input_text],
-      "% value": [100-input_response, input_response]
-  })
-  source_bg = pd.DataFrame({
-      "Topic": ['', input_text],
-      "% value": [100, 0]
-  })
-    
-  plot = alt.Chart(source).mark_arc(innerRadius=45, cornerRadius=25).encode(
-      theta="% value",
-      color= alt.Color("Topic:N",
-                      scale=alt.Scale(
-                          #domain=['A', 'B'],
-                          domain=[input_text, ''],
-                          # range=['#29b5e8', '#155F7A']),  # 31333F
-                          range=chart_color),
-                      legend=None),
-  ).properties(width=130, height=130)
-    
-  text = plot.mark_text(align='center', color="#29b5e8", font="Lato", fontSize=20, fontWeight=700).encode(text=alt.value(f'{input_response} %'))
-  plot_bg = alt.Chart(source_bg).mark_arc(innerRadius=45, cornerRadius=20).encode(
-      theta="% value",
-      color= alt.Color("Topic:N",
-                      scale=alt.Scale(
-                          # domain=['A', 'B'],
-                          domain=[input_text, ''],
-                          range=chart_color),  # 31333F
-                      legend=None),
-  ).properties(width=130, height=130)
-  return plot_bg + plot + text
-
-
-# Menu orizzontale con Tabs
-tab1, tab2, tab3, tab4, tab5= st.tabs(["Home", "Analisi Ritardi", "Mappa Voli", "Grafici Personalizzati","Machine Learning"])
-
-# --- Home Page ---
-with tab1:
-    st.title("Dashboard Voli - Panoramica")
-    
-    # Metriche principali
-    st.write("### Panoramica")
-    colonne = st.columns((1.5, 4.5, 2), gap='medium')
-
-    with colonne[0]:
-        st.write("### Anteprima Dataset")
-        st.metric(label="Voli totali", value=conta_righe_totali())
-
-        giorno_piu_voli=spark_to_pandas(giorno_della_settimana_con_piu_voli())
-        # giorno_num = giorno_piu_voli.collect()[0]["DayOfWeek"]
-        # numero_voli = giorno_piu_voli.collect()[0]["count"]
-        giorno_num=giorno_piu_voli.iloc[0]["DayOfWeek"]
-        numero_voli=giorno_piu_voli.iloc[0]["count"]
-        # Convertiamo il numero del giorno nella stringa
-        giorno_nome = converti_giorno(giorno_num)
-        st.markdown(
-        f"""
-        <div style="padding: 10px; background-color: lightgrey; border-radius: 10px; font-size: 18px; text-align: center;">
-            <b>Giorno della settimana con più voli:</b> {giorno_nome}<br>
-            <b>Numero:</b> {numero_voli}
-        </div>
-        """, unsafe_allow_html=True
+# Compagnia con più voli cancellati e percentuali cause
+def compagniaPiuVoliCancellati():
+    # Filtra i voli cancellati (Cancelled == 1)
+    voli_cancellati = df.filter(col("Cancelled") == 1)
+    # Raggruppa per compagnia aerea e conta i voli cancellati
+    cancellati_per_compagnia = voli_cancellati.groupBy("Reporting_Airline").agg(count("*").alias("NumeroVoliCancellati"))
+    # Trova la compagnia con il maggior numero di voli cancellati
+    compagnia_max_cancellazioni = cancellati_per_compagnia.orderBy(col("NumeroVoliCancellati").desc()).limit(1).collect()
+    if compagnia_max_cancellazioni:
+        compagnia = compagnia_max_cancellazioni[0]["Reporting_Airline"]
+        totale_cancellati = compagnia_max_cancellazioni[0]["NumeroVoliCancellati"]
+        # Filtra i voli cancellati della compagnia con più cancellazioni
+        cancellazioni_compagnia = voli_cancellati.filter(col("Reporting_Airline") == compagnia)
+        # Calcola la percentuale per ciascuna causa
+        percentuali_cause = (
+            cancellazioni_compagnia.groupBy("CancellationCode")
+            .agg((count("*") / totale_cancellati * 100).alias("Percentuale"))
+            .orderBy("CancellationCode")
         )
-        
-        st.markdown('#### Percentuali')
-        st.write('In anticipo')
-        perc_anticipo=percentuale_voli_anticipo()
-        in_anticipo=make_donut(perc_anticipo,"Voli in anticipo","green")
-        st.altair_chart(in_anticipo)
-        st.write('In ritardo')
-        perc_ritardo=percentuale_voli_ritardo()
-        in_ritardo=make_donut(perc_ritardo,"Voli in ritardo","red")
-        st.altair_chart(in_ritardo)
-        # st.plotly_chart(widget_percentuale_rotondo(perc_anticipo,"Voli in anticipo"))
-        # Tabella con un'anteprima del dataset
-    
-    with colonne[1]:
-        # Data for the map
-        dfTem = pd.read_csv(coordinateAeroporti, delimiter=",")
-        # dfMap1 = pd.DataFrame()
-        # dfMap1 = dfTem[['OriginLat', 'OriginLon']]
-        # dfMap1.rename(columns={'OriginLat': 'LAT', 'OriginLon': 'LON'}, inplace=True)
-        dfMap2 = pd.DataFrame()
-        dfMap2 = dfTem[['DestinationLat', 'DestinationLon']]
-        dfMap2.rename(columns={'DestinationLat': 'LAT', 'DestinationLon': 'LON'}, inplace=True)
-        # First row - map
-        st.markdown(":red[Mappa degli aeroporti]")
-        st.markdown("Ogni punto sulla mappa rappresenta un aeroporto da cui è partito, atterrato o transitato un aereo")
-        st.map(data=dfMap2, zoom=2)
+        # Mostra i risultati
+        #print(f"La compagnia con più voli cancellati è: {compagnia} con {totale_cancellati} voli cancellati.")
+        percentuali_cause.show(truncate=True)
+        return compagnia, percentuali_cause.collect()
+    else:
+        print("Nessun volo cancellato trovato nel dataset.")
+        return None, None
+
+# Compagnia aerea con più km percorsi
+def compagniaPiuKmPercorsi():
+    voli_con_tail_number = df.filter(col("Tail_Number").isNotNull())
+    km_percorsi_per_compagnia = voli_con_tail_number.groupBy("Reporting_Airline").agg(sum("Distance").alias("TotaleKm"))
+    compagnia_max_km = km_percorsi_per_compagnia.orderBy(col("TotaleKm").desc()).limit(10)
+    compagnia_max_km.show()
+    return compagnia_max_km
+
+# Stato più visitato
+def statoPiuVisitato():
+    tratte_filtrate = df.filter(col("DestState").isNotNull())
+    stati = tratte_filtrate.groupBy("DestState").agg(count("*").alias("NumeroVoli"))
+    stato_piu_visitato = stati.orderBy(col("NumeroVoli").desc()).limit(1).show(truncate=True)
+    return stato_piu_visitato
+
+# Stati con il minor ritardo medio
+def statiMinRitardoMedio():
+    tratte_filtrate = df.filter(col("ArrDelayMinutes").isNotNull())
+    ritardo_medio_per_stato = tratte_filtrate.groupBy("DestStateName").agg(mean("ArrDelayMinutes").alias("RitardoMedio"))
+    stati_min_ritardo = ritardo_medio_per_stato.orderBy(col("RitardoMedio")).limit(8)
+    stati_min_ritardo = stati_min_ritardo.withColumn('RitardoMedio', pyspark_round(col('RitardoMedio'), 2))
+    stati_min_ritardo.show(truncate=True)
+    return stati_min_ritardo
 
 
+#------------------------QUERY VOLI------------------------
 
-    with colonne[2]:
-        st.markdown('#### Top Aeroporti')
-        dataframe_query=spark_to_pandas(rottePiuComuni())
-        st.dataframe(dataframe_query,
-                    column_order=("Origin", "Dest","NumeroVoli"),
-                    hide_index=True,
-                    width=None,
-                    column_config={
-                        "Origin": st.column_config.TextColumn(
-                            "Partenza",
-                        ),
-                        "Dest": st.column_config.TextColumn(
-                            "Arrivo",
-                        ),
-                        "NumeroVoli": st.column_config.ProgressColumn(
-                            "NumeroVoli",
-                            format="%f",
-                            min_value=0, 
-                            max_value=conta_righe_totali() 
-                        )
-                        }
-                    )
-        st.markdown('#### Stati più visitati')
-        dataframe_query2=spark_to_pandas(stati_piu_visitati())
-        st.dataframe(dataframe_query2,
-                    column_order=("DestStateName", "count"),
-                    hide_index=True,
-                    width=None,
-                    column_config={
-                        "DestStateName": st.column_config.TextColumn(
-                            "Stato",
-                        ),
-                        "count": st.column_config.ProgressColumn(
-                            "Voli atterrati",
-                            format="%f",
-                            min_value=0, 
-                            max_value=conta_righe_totali() 
-                        )}
-                    )
+# Numero totale di voli per mese
+def totaleVoliPerMese():
+    voli_per_mese = df.groupBy("Month").agg(count("*").alias("NumeroVoli")).orderBy("Month")
+    voli_per_mese.show(truncate=True)
+    return voli_per_mese
+
+# Trovare il volo con la distanza massima percorsa (E MINIMA) FATTO DA GZ -> volo_distanza_max() e volo_distanza_min()
+
+# Calcolare la percentuale di voli in orario (ritardo ≤ 0 minuti)
+def percentualeVoliInOrario():
+    # Conta il numero totale di voli nel dataset
+    totale_voli = df.count()
+    # Filtra i voli che sono arrivati in orario (ritardo ≤ 0 minuti)
+    voli_in_orario = df.filter(col("ArrDelay") <= 0).count()
+    # Calcola la percentuale
+    percentuale = (voli_in_orario / totale_voli) * 100
+    print(f"La percentuale di voli in orario è: {percentuale:.2f}%")
+    return percentuale
+
+# Identificare le rotte (origine-destinazione) più comuni. -> rottePiuComuni()
+
+# Analizzare le cancellazioni di voli e collegarle al giorno della settimana ???
+
+# Sceglie aereo e mostra le tratte di quell'aereo
+def mostraTratteAereo(tail_number):
+    # Filtra le tratte per il Tail_Number specificato
+    tratte_aereo = df.filter(col("Tail_Number") == tail_number)
+    if tratte_aereo.count() > 0:
+        # Seleziona le tratte uniche (Origin, Dest)
+        tratte_uniche = tratte_aereo.select("Origin", "Dest").distinct()
+        # Mostra i risultati
+        print(f"Tratte uniche per l'aereo con Tail_Number '{tail_number}':")
+        tratte_uniche.show(truncate=False)
+        # Restituisce il DataFrame delle tratte uniche
+        return tratte_uniche
+    else:
+        print(f"Nessuna tratta trovata per l'aereo con Tail_Number '{tail_number}'.")
+        return None
+
+# Numero di voli che hanno subito un ritardo al decollo ma sono atterrati in anticipo
+def voliRitardoDecolloArrivoAnticipo():
+    voli_filtrati = df.filter((col("DepDelay") > 0) & (col("ArrDelay") < 0))
+    numero_voli = voli_filtrati.count()
+    print(f"Il numero di voli che hanno subito un ritardo al decollo ma sono atterrati in anticipo è: {numero_voli}")
+    return numero_voli
+
+#------------------------QUERY VOLI------------------------
+
+# Calcolare la media dei ritardi alla partenza per aeroporto di origine (se non si passa nessun parametro alla funzione mostra la media per tutti gli aereoporti diversi)
+def mediaRitardiPartenza(aeroporto=None): # =None significa che si può non specificare
+    if aeroporto:
+        ritardi = df.filter(col("Origin") == aeroporto).select(mean("DepDelay").alias("MediaRitardo"))
+        risultato = ritardi.collect()
+        if risultato:
+            media = risultato[0]["MediaRitardo"]
+            print(f"La media dei ritardi alla partenza per l'aeroporto '{aeroporto}' è: {media:.2f} minuti.")
+            return media
+        else:
+            print(f"Nessun dato disponibile per l'aeroporto '{aeroporto}'.")
+            return None
+    else:
+        media_per_aeroporto = (
+            df.groupBy("Origin")
+            .agg(mean("DepDelay").alias("MediaRitardo"))
+            .orderBy("Origin")
+        )
+        print("Media dei ritardi alla partenza per tutti gli aeroporti:")
+        media_per_aeroporto.show(truncate=False)
+        return media_per_aeroporto
 
 
-# Footer
-st.markdown("---")
-st.write("Progetto Big Data - Analisi Ritardi Voli ✈️")
+# Percentuale di voli in orario che arrivano in quello aeroporto (ritardo ≤ 0 minuti)
+def percentualeVoliInOrarioArrivi(aeroporto=None):
+    if aeroporto:
+        voli_arrivo = df.filter(col("Dest") == aeroporto)
+        totale_voli_arrivo = voli_arrivo.count()    
+        if totale_voli_arrivo > 0:
+            voli_in_orario = voli_arrivo.filter(col("ArrDelay") <= 0).count()
+            percentuale = (voli_in_orario / totale_voli_arrivo) * 100
+            print(f"La percentuale di voli in orario che arrivano all'aeroporto '{aeroporto}' è: {percentuale:.2f}%")
+            return percentuale
+        else:
+            print(f"Nessun volo in arrivo registrato per l'aeroporto '{aeroporto}'.")
+            return None
+    else:
+        print("Specificare un aeroporto come parametro.")
+        return None
