@@ -23,7 +23,7 @@ import pandas as pd
 from pyspark.sql.functions import round as pyspark_round
 
 
-# Funzione per creare una sessione Spark
+# # Funzione per creare una sessione Spark
 # def get_spark_session_TUTTO():
 #     return SparkSession.builder \
 #         .appName("Progetto BigData") \
@@ -46,7 +46,7 @@ folder_path = r"C:\Users\giuse\Desktop\UNIVERSITA'\MAGISTRALE\1° ANNO\1° SEMES
 file_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.csv')]
 
 #df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).drop("_c109").cache()
-df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(4000000).drop("_c109").cache()
+df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(100000).drop("_c109").cache()
 
 
 #df = df.withColumn("FlightDate", to_date(col("FlightDate"), "yyyy-MM-dd"))

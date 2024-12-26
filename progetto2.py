@@ -83,7 +83,7 @@ def make_donut(input_response, input_text, input_color):
 
 
 # Menu orizzontale con Tabs
-tab1, tab2, tab3, tab4, tab5= st.tabs(["Home", "Analisi Ritardi", "Mappa Voli", "Grafici Personalizzati","Machine Learning"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7= st.tabs(["Home", "Rotte", "Aeroporti", "Compagnie","Tempistiche","AI","Paesi"])
 
 # --- Home Page ---
 with tab1:
@@ -212,11 +212,19 @@ with tab1:
 
         # Aggiungi i nomi dei mesi
         voli_per_mese["Month"] = voli_per_mese["Month"].map(mesi)
-        # Imposta i mesi come indice per il grafico
-        voli_per_mese_wide.columns = voli_per_mese["Month"].unique()  # Rinomina colonne per chiarezza
+        mesi_ordinati=["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno","Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+        voli_per_mese = voli_per_mese.sort_values("Month")
 
+        # Riorganizza i dati in formato "wide" (se necessario per altre operazioni)
+        voli_per_mese_wide = voli_per_mese.pivot_table(
+            index="Month", columns="Month", values="NumeroVoli", aggfunc="sum"
+        ).fillna(0)
+
+        # # Imposta i mesi come indice per il grafico
+        # voli_per_mese_wide.columns = voli_per_mese["Month"].unique()  # Rinomina colonne per chiarezza
+        st.markdown('#### Numero di voli per mese')
         # Visualizza il grafico con colori distinti per mese
-        st.area_chart(voli_per_mese_wide, use_container_width=True)
+        st.area_chart(voli_per_mese.set_index("Month"), use_container_width=True)
         
         
 
