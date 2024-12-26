@@ -92,15 +92,16 @@ with tab1:
     colonne = st.columns((1.5, 4.5, 2), gap='medium')
 
     with colonne[0]:
-        st.write("### Anteprima Dataset")
+        st.subheader("Anteprima Dataset", divider="grey")
         st.metric(label="Voli totali", value=conta_righe_totali())
-
+        nome_Aereo_piu_km=aereo_piu_km_percorsi().collect()[0]["Tail_Number"]
+        st.metric(label="Aereo con più km percorsi",value=nome_Aereo_piu_km)
         giorno_piu_voli=spark_to_pandas(giorno_della_settimana_con_piu_voli())
         # giorno_num = giorno_piu_voli.collect()[0]["DayOfWeek"]
         # numero_voli = giorno_piu_voli.collect()[0]["count"]
         giorno_num=giorno_piu_voli.iloc[0]["DayOfWeek"]
         numero_voli=giorno_piu_voli.iloc[0]["count"]
-        # Convertiamo il numero del giorno nella stringa
+        # Converto il numero del giorno nella stringa
         giorno_nome = converti_giorno(giorno_num)
         st.markdown(
         f"""
@@ -167,7 +168,9 @@ with tab1:
             dfMap = pd.concat([dfMap1, dfMap2])
             st.markdown("Ogni punto sulla mappa rappresenta un aeroporto da cui è partito, atterrato o transitato un aereo")
             st.map(data=dfMap, zoom=1,color="#008000")  
+        
         colonne_interne_centro=st.columns([1,1])
+        
         with colonne_interne_centro[0]:
             dati_compagnie=spark_to_pandas(compagnie_piu_voli_fatti())
             # Cambia l'indice per impostare le compagnie come asse Y
@@ -190,7 +193,30 @@ with tab1:
             stati_min_ritardo.set_index('DestStateName', inplace=True)
             # stati_min_ritardo=stati_min_ritardo.transpose()
             st.bar_chart(data=stati_min_ritardo,x=None,y=None,color=None,x_label="Ritardo medio",y_label="Stato",horizontal=True,use_container_width=False)
+            
+            st.markdown('#### Ritardi medi per stagione')
+            ritardi_mensili=spark_to_pandas(ritardo_medio_per_stagione())
+            st.bar_chart(ritardi_mensili.set_index("Stagione"), horizontal=True,use_container_width=True)
         
+        voli_per_mese=spark_to_pandas(totaleVoliPerMese())
+        voli_per_mese_wide = voli_per_mese.pivot_table(
+            index="Month", columns="Month", values="NumeroVoli", aggfunc="sum"
+        ).fillna(0)
+
+        # Mappatura dei numeri dei mesi ai nomi
+        mesi = {
+            1: "Gennaio", 2: "Febbraio", 3: "Marzo", 4: "Aprile",
+            5: "Maggio", 6: "Giugno", 7: "Luglio", 8: "Agosto",
+            9: "Settembre", 10: "Ottobre", 11: "Novembre", 12: "Dicembre"
+        }
+
+        # Aggiungi i nomi dei mesi
+        voli_per_mese["Month"] = voli_per_mese["Month"].map(mesi)
+        # Imposta i mesi come indice per il grafico
+        voli_per_mese_wide.columns = voli_per_mese["Month"].unique()  # Rinomina colonne per chiarezza
+
+        # Visualizza il grafico con colori distinti per mese
+        st.area_chart(voli_per_mese_wide, use_container_width=True)
         
         
 
@@ -200,7 +226,7 @@ with tab1:
 
 
     with colonne[2]:
-        st.markdown('#### Stati più visitati')
+        st.subheader("Stati più visitati", divider="grey")
         dataframe_query2=spark_to_pandas(stati_piu_visitati())
         st.dataframe(dataframe_query2,
                     column_order=("DestStateName", "count"),

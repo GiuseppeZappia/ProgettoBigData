@@ -16,7 +16,7 @@
 
 import os
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, mean, sum, asc, desc, when,avg
+from pyspark.sql.functions import col, count, mean, sum, asc, desc, when,avg,expr
 import time
 from geopy import Nominatim
 import pandas as pd
@@ -46,7 +46,7 @@ folder_path = r"C:\Users\giuse\Desktop\UNIVERSITA'\MAGISTRALE\1° ANNO\1° SEMES
 file_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.csv')]
 
 #df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).drop("_c109").cache()
-df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(100000).drop("_c109").cache()
+df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).limit(4000000).drop("_c109").cache()
 
 
 #df = df.withColumn("FlightDate", to_date(col("FlightDate"), "yyyy-MM-dd"))
@@ -174,7 +174,7 @@ def numero_voli_per_tratta(origin,dest):
 
 def aereo_piu_km_percorsi():
     aerei_filtrati=df.filter(col("Tail_Number").isNotNull())
-    aereo=aerei_filtrati.groupBy("Tail_Number").agg(sum("Distance").alias("TotalDistance")).orderBy(col("TotalDistance").desc()).limit(1).show()
+    aereo=aerei_filtrati.groupBy("Tail_Number").agg(sum("Distance").alias("TotalDistance")).orderBy(col("TotalDistance").desc()).limit(1)
     return aereo
 
 def velocita_media_totale():
@@ -569,8 +569,8 @@ def ritardo_medio_per_stagione(aeroporto=None,compagnia=None):
     result = avg_delays.orderBy(expr(
         "case Stagione when 'Inverno' then 1 when 'Primavera' then 2 when 'Estate' then 3 when 'Autunno' then 4 end"
     ))
-    print(result.collect())
-    return result.collect()
+    print(result.show())
+    return result
 
 def ritardo_medio_partenza_stato(stato):
     voli_filtrati = df.filter(col("OriginStateName")==stato).agg(avg("DepDelay").alias("AvgDepartureDelay")).collect()
@@ -736,7 +736,7 @@ def statoPiuVisitato():
 def statiMinRitardoMedio():
     tratte_filtrate = df.filter(col("ArrDelayMinutes").isNotNull())
     ritardo_medio_per_stato = tratte_filtrate.groupBy("DestStateName").agg(mean("ArrDelayMinutes").alias("RitardoMedio"))
-    stati_min_ritardo = ritardo_medio_per_stato.orderBy(col("RitardoMedio")).limit(8)
+    stati_min_ritardo = ritardo_medio_per_stato.orderBy(col("RitardoMedio")).limit(10)
     stati_min_ritardo = stati_min_ritardo.withColumn('RitardoMedio', pyspark_round(col('RitardoMedio'), 2))
     stati_min_ritardo.show(truncate=True)
     return stati_min_ritardo
