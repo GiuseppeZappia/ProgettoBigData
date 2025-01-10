@@ -327,7 +327,7 @@ with col_st2:
     traffico_df = spark_to_pandas(stati_maggiore_traffico_date(diaaa, dfaaa))
     # cancellazioni_df = spark_to_pandas(stati_percentuale_voli_cancellati(diaaa, dfaaa))
     maggiore_increm=spark_to_pandas(stati_con_maggiore_increm_ritardo_inverno_rispetto_estate(diaaa,dfaaa))
-    st.markdown("### Grafici")
+    st.markdown("### Tabelle")
     st.write("""
                 - Minor Ritardo Medio 
                 - Stati più Visitati 
@@ -443,42 +443,35 @@ with col_st2:
     confronto_date_importanti=st.multiselect("Aeroporto per confronto",load_airport_codes(),key='date_importanti')
     
     if grafico_a_barre_opzione == "Voli partiti":
-        # Create a dictionary to store all airports' data
+
         dati_stati = {}
             
-        # Process main airport data
         voli_date_importanti = {}
-        # Calculate daily average for main airport
+
         totale_voli_anno = totale_voli_da_stato(stato_selezionato_giorni)
         media_giornaliera = totale_voli_anno / 365
         
-        # Add the daily average as a separate "date" entry
         voli_date_importanti["Media Giornaliera"] = media_giornaliera
         
-        # Add data for each important date
         for data in date_importanti:
             num_voli = totale_voli_da_stato(stato_selezionato_giorni, data)
             data_dt = pd.to_datetime(data)
             data_formattata = data_dt.strftime('%d %B')
             voli_date_importanti[data_formattata] = num_voli
         
-        # Create DataFrame for main airport
         df_principale = pd.DataFrame(list(voli_date_importanti.items()), 
                                 columns=['Data', stato_selezionato_giorni])
         df_principale.set_index('Data', inplace=True)
         dati_stati[stato_selezionato_giorni] = df_principale
-        # Process comparison airports
+
         for stato in confronto_date_importanti:
             if stato != stato_selezionato_giorni:
                 voli_confronto = {}
-                # Calculate daily average for comparison airport
                 totale_voli_anno_confronto = totale_voli_da_stato(stato_selezionato_giorni)
                 media_giornaliera_confronto = totale_voli_anno_confronto / 365
                 
-                # Add the daily average as a separate "date" entry
                 voli_confronto["Media Giornaliera"] = media_giornaliera_confronto
-                
-                # Add data for each important date
+
                 for data in date_importanti:
                     num_voli = totale_voli_da_stato(stato_selezionato_giorni, data)
                     data_dt = pd.to_datetime(data)
@@ -489,60 +482,54 @@ with col_st2:
                                         columns=['Data', stato])
                 df_confronto.set_index('Data', inplace=True)
                 dati_stati[stato] = df_confronto
-        # Combine all DataFrames
+
         df_combinato = pd.DataFrame()
         for stato, dati in dati_stati.items():
             if df_combinato.empty:
                 df_combinato = dati
             else:
                 df_combinato = df_combinato.join(dati)
-        # Add explanatory text
+
         st.markdown("""
         Il grafico mostra il numero di voli partiti dallo stato nelle date principali dell'anno.
         L'ultima barra rappresenta la media giornaliera dei voli per ogni stato, permettendo un confronto 
         immediato tra l'operatività normale e quella nei giorni speciali.
         """)
         
-        # Create the bar chart
+
         st.bar_chart(data=df_combinato, use_container_width=True)
     elif grafico_a_barre_opzione == "Voli atterrati":
-        # Create a dictionary to store all airports' data
+
         dati_stati = {}
             
-        # Process main airport data
         voli_date_importanti = {}
-        # Calculate daily average for main airport
         
         totale_voli_anno = totale_voli_verso_stato(stato_selezionato_giorni)
         media_giornaliera = totale_voli_anno / 365
         
-        # Add the daily average as a separate "date" entry
         voli_date_importanti["Media Giornaliera"] = media_giornaliera
         
-        # Add data for each important date
         for data in date_importanti:
             num_voli = totale_voli_verso_stato(stato_selezionato_giorni, data)
             data_dt = pd.to_datetime(data)
             data_formattata = data_dt.strftime('%d %B')
             voli_date_importanti[data_formattata] = num_voli
         
-        # Create DataFrame for main state
         df_principale = pd.DataFrame(list(voli_date_importanti.items()), 
                                 columns=['Data', stato_selezionato_giorni])
         df_principale.set_index('Data', inplace=True)
         dati_stati[stato_selezionato_giorni] = df_principale
-        # Process comparison airports
+
         for stato in confronto_date_importanti:
             if stato != stato_selezionato_giorni:
                 voli_confronto = {}
-                # Calculate daily average for comparison airport
+
                 totale_voli_anno_confronto = totale_voli_verso_stato(stato_selezionato_giorni)
                 media_giornaliera_confronto = totale_voli_anno_confronto / 365
                 
-                # Add the daily average as a separate "date" entry
+
                 voli_confronto["Media Giornaliera"] = media_giornaliera_confronto
                 
-                # Add data for each important date
                 for data in date_importanti:
                     num_voli = totale_voli_verso_stato(stato_selezionato_giorni, data)
                     data_dt = pd.to_datetime(data)
@@ -553,60 +540,53 @@ with col_st2:
                                         columns=['Data', stato])
                 df_confronto.set_index('Data', inplace=True)
                 dati_stati[stato] = df_confronto
-        # Combine all DataFrames
+
         df_combinato = pd.DataFrame()
         for stato, dati in dati_stati.items():
             if df_combinato.empty:
                 df_combinato = dati
             else:
                 df_combinato = df_combinato.join(dati)
-        # Add explanatory text
+
         st.markdown("""
         Il grafico mostra il numero di voli arrivati nello stato nelle date principali dell'anno.
         L'ultima barra rappresenta la media giornaliera dei voli per ogni stato, permettendo un confronto 
         immediato tra l'operatività normale e quella nei giorni speciali.
         """)
         
-        # Create the bar chart
+
         st.bar_chart(data=df_combinato, use_container_width=True)
     elif grafico_a_barre_opzione == "Voli totali":
-        # Create a dictionary to store all airports' data
-        dati_stati = {}
-            
-        # Process main airport data
+
+        dati_stati = {}   
+
         voli_date_importanti = {}
-        # Calculate daily average for main airport
         
         totale_voli_anno = numero_voli_per_stato(stato_selezionato_giorni)
         media_giornaliera = totale_voli_anno / 365
-        
-        # Add the daily average as a separate "date" entry
+
         voli_date_importanti["Media Giornaliera"] = media_giornaliera
-        
-        # Add data for each important date
+
         for data in date_importanti:
             num_voli = numero_voli_per_stato(stato_selezionato_giorni, data)
             data_dt = pd.to_datetime(data)
             data_formattata = data_dt.strftime('%d %B')
             voli_date_importanti[data_formattata] = num_voli
-        
-        # Create DataFrame for main airport
+
         df_principale = pd.DataFrame(list(voli_date_importanti.items()), 
                                 columns=['Data', stato_selezionato_giorni])
         df_principale.set_index('Data', inplace=True)
         dati_stati[stato_selezionato_giorni] = df_principale
-        # Process comparison airports
+
         for stato in confronto_date_importanti:
             if stato != stato_selezionato_giorni:
                 voli_confronto = {}
-                # Calculate daily average for comparison airport
+
                 totale_voli_anno_confronto = numero_voli_per_stato(stato_selezionato_giorni)
                 media_giornaliera_confronto = totale_voli_anno_confronto / 365
-                
-                # Add the daily average as a separate "date" entry
+
                 voli_confronto["Media Giornaliera"] = media_giornaliera_confronto
-                
-                # Add data for each important date
+
                 for data in date_importanti:
                     num_voli = numero_voli_per_stato(stato, data)
                     data_dt = pd.to_datetime(data)
@@ -617,30 +597,28 @@ with col_st2:
                                         columns=['Data', stato])
                 df_confronto.set_index('Data', inplace=True)
                 dati_stati[stato] = df_confronto
-        # Combine all DataFrames
+
         df_combinato = pd.DataFrame()
         for stato, dati in dati_stati.items():
             if df_combinato.empty:
                 df_combinato = dati
             else:
                 df_combinato = df_combinato.join(dati)
-        # Add explanatory text
+
         st.markdown("""
         Il grafico mostra il numero di voli totali passati per lo stato nelle date principali dell'anno.
         L'ultima barra rappresenta la media giornaliera dei voli totali per ogni stato, permettendo un confronto 
         immediato tra l'operatività normale e quella nei giorni speciali.
         """)
-        
-        # Create the bar chart
+
         st.bar_chart(data=df_combinato, use_container_width=True)
     elif grafico_a_barre_opzione == "Percentuale Cancellazioni":
         dati_stati = {}
         cancellazioni_date_importanti = {}
-        # Calculate yearly cancellation percentage for main airline
+
         cancellazioni_anno = percentuale_voli_cancellati_stato(stato_selezionato_giorni)
         cancellazioni_date_importanti["Media Annuale"] = cancellazioni_anno
-        
-        # Add data for each important date
+
         for data in date_importanti:
             cancellazioni = percentuale_voli_cancellati_stato(stato_selezionato_giorni, data)
             data_dt = pd.to_datetime(data)
@@ -653,7 +631,7 @@ with col_st2:
         )
         df_principale.set_index('Data', inplace=True)
         dati_stati[stato_selezionato_giorni] = df_principale
-        # Process comparison airlines
+
         for stato in confronto_date_importanti:
             cancellazioni_confronto = {}
             
@@ -673,7 +651,7 @@ with col_st2:
             )
             df_confronto.set_index('Data', inplace=True)
             dati_stati[stato] = df_confronto
-        # Combine all DataFrames
+
         df_combinato = pd.DataFrame()
         for stato, dati in dati_stati.items():
             if df_combinato.empty:
@@ -688,65 +666,9 @@ with col_st2:
         
         st.bar_chart(data=df_combinato, use_container_width=True)
 
-        
-
-    # st.subheader("Numero di voli nei giorni festivi")
-    # # Menu orizzontale per la selezione delle festività
-    # festa_selezionata = option_menu(
-    #     menu_title=None,
-    #     options=["Tutti", "Natale", "Capodanno", "4 Luglio", "Thanksgiving", "Halloween"],
-    #     icons=["filter", "tree", "calendar", "flag", "turkey", "mask"],
-    #     default_index=0,
-    #     orientation="horizontal",
-    #     styles={
-    #         "container": {"padding": "0px", "background-color": "#f8f9fa"},
-    #         "icon": {"color": "light-grey", "font-size": "18px"},
-    #         "nav-link": {"font-size": "14px", "text-align": "center", "margin": "0px"},
-    #         "nav-link-selected": {"background-color": "light-grey"},
-    #     },
-    # )
-
-    # # Query per calcolare i voli nei giorni festivi
-    # try:
-    #     voli_festivi_df = spark_to_pandas(numero_voli_festivi(festa_selezionata))
-    # except Exception as e:
-    #     st.error(f"Errore durante l'esecuzione della query: {e}")
-    #     voli_festivi_df = pd.DataFrame()
-
-    # # Verifica se ci sono dati
-    # if voli_festivi_df.empty:
-    #     st.warning(f"Nessun dato trovato per la festività selezionata: {festa_selezionata}")
-    # else:
-    #     # Mappatura dei colori per le festività
-    #     colori_festivita = {
-    #         "Natale": "red",
-    #         "Capodanno": "green",
-    #         "4 Luglio": "blue",
-    #         "Thanksgiving": "orange",
-    #         "Halloween": "purple"
-    #     }
-    #     voli_festivi_df["Colore"] = voli_festivi_df["Festività"].map(colori_festivita)
-
-    #     # Prepara il grafico con Altair
-    #     chart = alt.Chart(voli_festivi_df).mark_bar().encode(
-    #         x=alt.X("Festività:N", title="Festività"),
-    #         y=alt.Y("NumeroVoli:Q", title="Numero di Voli Partiti"),
-    #         color=alt.Color("Festività:N", scale=alt.Scale(
-    #             domain=list(colori_festivita.keys()),
-    #             range=list(colori_festivita.values())
-    #         )),
-    #         tooltip=["Festività:N", "NumeroVoli:Q"]
-    #     ).properties(
-    #         width=600,
-    #         height=400,
-    #         title=f"Numero di voli durante: {festa_selezionata}"
-    #     )
-
-    #     # Mostra il grafico
-    #     st.altair_chart(chart, use_container_width=True)
 
     st.subheader("Stagionalità dei voli per stato specifico")
-    # Selezione dello stato
+
     stati_disponibili = spark_to_pandas(stati_distinti()).sort_values("OriginStateName")
     stato_selezionato = st.selectbox(
         "Seleziona uno stato",

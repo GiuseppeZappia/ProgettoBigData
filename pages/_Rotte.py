@@ -113,8 +113,8 @@ with col_stats:
     )
     
    
-    percentuale_in_orario = percentualeVoliInOrario(data_inizio, data_fine)  # Da query
-    percentuale_in_ritardo = percentuale_voli_ritardo_date(data_inizio, data_fine) # Da query
+    percentuale_in_orario = percentualeVoliInOrario(data_inizio, data_fine)  
+    percentuale_in_ritardo = percentuale_voli_ritardo_date(data_inizio, data_fine)
  
     st.markdown("**Voli In Orario**")
     st.altair_chart(make_donut(percentuale_in_orario, "In Orario", "green"), use_container_width=True)   
@@ -264,6 +264,7 @@ with col_graph:
             )
     else:
         st.info("Seleziona partenza e destinazione per calcolare la velocità media.")
+    
     st.markdown("### Analisi Cancellazioni")
     
     vista = st.segmented_control(

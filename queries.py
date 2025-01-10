@@ -9,12 +9,12 @@ from pyspark.ml.feature import VectorAssembler,StandardScaler
 from pyspark.ml.clustering import KMeans
 import time
 
-# folder_path = r"C:\Users\xdomy\Desktop\Università\MAGISTRALE\1° Anno 1° Semestre\Modelli e Tecniche per Big Data\Progetto Voli\Dataset Voli"
+folder_path = r"C:\Users\xdomy\Desktop\Università\MAGISTRALE\1° Anno 1° Semestre\Modelli e Tecniche per Big Data\Progetto Voli\Dataset Voli"
 
 spark=SparkSession.builder.master("local[*]").appName("Progetto BigData.com").config("spark.driver.memory", "8g").getOrCreate()
 spark.sparkContext.setLogLevel("OFF")
 
-folder_path = r"C:\Users\giuse\Desktop\UNIVERSITA'\MAGISTRALE\1° ANNO\1° SEMESTRE\MODELLI E TECNICHE PER BIG DATA\PROGETTO\DATI"
+#folder_path = r"C:\Users\giuse\Desktop\UNIVERSITA'\MAGISTRALE\1° ANNO\1° SEMESTRE\MODELLI E TECNICHE PER BIG DATA\PROGETTO\DATI"
 file_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.csv')]
 
 #df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).cache()
@@ -27,10 +27,10 @@ df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=T
 
 #---------------------------------------------QUERY PER VERIFICARE SE IL DATASET HA BISOGNO DI PREPROCESSING---------------------------------------------
 
-coordinateAeroporti = "C:/Users/giuse/Desktop/UNIVERSITA'/MAGISTRALE/1° ANNO/1° SEMESTRE/MODELLI E TECNICHE PER BIG DATA/PROGETTO/CODICE/coordinate.csv"
-# coordinateAeroporti = "C:/Users/xdomy/Desktop/Università/MAGISTRALE/1° Anno 1° Semestre/Modelli e Tecniche per Big Data/Progetto Voli/ProgettoBigData/coordinate.csv"
-coordinate_aeroporto="C:/Users/giuse/Desktop/UNIVERSITA'/MAGISTRALE/1° ANNO/1° SEMESTRE/MODELLI E TECNICHE PER BIG DATA/PROGETTO/CODICE/output_airports.csv"
-#coordinate_aeroporto domenico
+#coordinateAeroporti = "C:/Users/giuse/Desktop/UNIVERSITA'/MAGISTRALE/1° ANNO/1° SEMESTRE/MODELLI E TECNICHE PER BIG DATA/PROGETTO/CODICE/coordinate.csv"
+coordinateAeroporti = "C:/Users/xdomy/Desktop/Università/MAGISTRALE/1° Anno 1° Semestre/Modelli e Tecniche per Big Data/Progetto Voli/ProgettoBigData/coordinate.csv"
+#coordinate_aeroporto="C:/Users/giuse/Desktop/UNIVERSITA'/MAGISTRALE/1° ANNO/1° SEMESTRE/MODELLI E TECNICHE PER BIG DATA/PROGETTO/CODICE/output_airports.csv"
+coordinate_aeroporto="C:/Users/xdomy/Desktop/Università/MAGISTRALE/1° Anno 1° Semestre/Modelli e Tecniche per Big Data/Progetto Voli/ProgettoBigData/output_airports.csv"
 
 def conta_righe_duplicate():
     df.groupBy(df.columns).count().filter("count > 1").count()  
@@ -650,77 +650,56 @@ def voliRitardoDecolloArrivoAnticipo(data_inizio=None, data_fine=None):
     
 
 def stato_piu_visitato_date(data_inizio=None, data_fine=None):
-    query = df.filter(col("DestStateName").isNotNull())
-    
+    query = df.filter(col("DestStateName").isNotNull())  
     if data_inizio and data_fine:
-        query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))
-    
-    stati_visitati = query.groupBy("DestStateName").agg(count("*").alias("TotaleVisite"))
-    
-    stato_piu_visitato = stati_visitati.orderBy(col("TotaleVisite").desc()).limit(1)
-    
+        query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))    
+    stati_visitati = query.groupBy("DestStateName").agg(count("*").alias("TotaleVisite"))    
+    stato_piu_visitato = stati_visitati.orderBy(col("TotaleVisite").desc()).limit(1)    
     return {"stato_piu_visitato": stato_piu_visitato}
 
 
 def ritardo_medio_per_stato(data_inizio=None, data_fine=None):
-    query = df.filter(col("OriginStateName").isNotNull() & col("DepDelay").isNotNull())
-    
+    query = df.filter(col("OriginStateName").isNotNull() & col("DepDelay").isNotNull())   
     if data_inizio and data_fine:
-        query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))
-    
-    ritardi = query.groupBy("OriginStateName").agg(avg("DepDelay").alias("RitardoMedio"))
-    
-    ritardi_ordinati = ritardi.orderBy(col("RitardoMedio").desc())
-    
+        query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))   
+    ritardi = query.groupBy("OriginStateName").agg(avg("DepDelay").alias("RitardoMedio"))    
+    ritardi_ordinati = ritardi.orderBy(col("RitardoMedio").desc())    
     return ritardi_ordinati
 
 
 def voli_per_stato_origine(data_inizio=None, data_fine=None):
-    query = df.filter(col("OriginStateName").isNotNull())
-    
+    query = df.filter(col("OriginStateName").isNotNull())   
     if data_inizio and data_fine:
-        query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))
-    
-    voli = query.groupBy("OriginStateName").agg(count("*").alias("TotaleVoli"))
-    
-    voli_ordinati = voli.orderBy(col("TotaleVoli").desc())
-    
+        query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))    
+    voli = query.groupBy("OriginStateName").agg(count("*").alias("TotaleVoli"))  
+    voli_ordinati = voli.orderBy(col("TotaleVoli").desc())   
     return voli_ordinati
 
 
 def rapporto_voli_cancellati(data_inizio=None, data_fine=None, stato=None):
     query = df.filter(col("OriginStateName").isNotNull())
-
     if data_inizio and data_fine:
         query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))
-
     if stato:
         query = query.filter(col("OriginStateName") == stato)
-
     rapporto = query.groupBy("OriginStateName").agg(
         count("*").alias("TotaleVoli"),
         sum(col("Cancelled").cast("int")).alias("VoliCancellati")
     ).withColumn(
         "RapportoCancellati", col("VoliCancellati") / col("TotaleVoli")
     )
-
     rapporto_ordinato = rapporto.orderBy(col("RapportoCancellati").desc())
     return rapporto_ordinato
 
 
 def tempi_volo_per_stato(data_inizio=None, data_fine=None, stato=None):
     query = df.filter(col("OriginStateName").isNotNull() & col("AirTime").isNotNull())
-
     if data_inizio and data_fine:
         query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))
-    
     if stato:
-        query = query.filter(col("OriginStateName") == stato)
-    
+        query = query.filter(col("OriginStateName") == stato)   
     volo_piu_veloce = query.orderBy(col("AirTime").asc()).limit(1)
-
-    volo_piu_lento = query.orderBy(col("AirTime").desc()).limit(1)
-    
+    volo_piu_lento = query.orderBy(col("AirTime").desc()).limit(1)   
     return {
         "volo_piu_veloce": volo_piu_veloce,
         "volo_piu_lento": volo_piu_lento
@@ -729,13 +708,10 @@ def tempi_volo_per_stato(data_inizio=None, data_fine=None, stato=None):
 
 def ritardi_medi_per_giorno(data_inizio=None, data_fine=None, giorno=None):
     query = df.filter(col("OriginStateName").isNotNull() & col("DepDelay").isNotNull())
-
     if data_inizio and data_fine:
         query = query.filter((col("FlightDate") >= data_inizio) & (col("FlightDate") <= data_fine))
-    
     if giorno is not None:
         query = query.filter(col("DayOfWeek") == giorno)
-
     ritardi = query.groupBy("OriginStateName").agg(avg("DepDelay").alias("RitardoMedio"))
     return ritardi.orderBy(col("RitardoMedio").desc())
 
@@ -746,14 +722,11 @@ def incremento_ritardi_invernali(causa=None):
         col("DepDelay").isNotNull() &
         col("Month").isin([12, 1, 2])  
     )
-
     if causa:
         query = query.filter(col("CancellationCode") == causa)
-
     ritardi = query.groupBy("OriginStateName").agg(
         avg("DepDelay").alias("RitardoMedio")
     )
-
     return ritardi.orderBy(col("RitardoMedio").desc())
 
 
@@ -1049,151 +1022,3 @@ def cluster_routes(numero_cluster):
         "rate_cancellazione", "rate_dirottamento", "media_tempo_volo",
         "cluster"
     ).toPandas()
-
-
-#--------------------PREDICITON CANCELLED------------------
-# import streamlit as st
-# from pyspark.sql import SparkSession
-# from pyspark.sql.functions import col, hour, when, coalesce, lit
-# from pyspark.sql.types import IntegerType, StructType, StructField, StringType, DoubleType
-# from pyspark.ml.feature import StringIndexer, VectorAssembler, StandardScaler
-# from pyspark.ml.classification import LogisticRegression
-# from pyspark.ml import Pipeline
-# import datetime
-
-# def prepare_training_data(df):
-#     """
-#     Prepare the training data with consistent feature engineering.
-#     This function handles the initial data processing for model training.
-#     """
-#     # First, select our core features
-#     selected_features = df.select(
-#         "Origin", 
-#         "Dest",
-#         "Month",
-#         "DayofMonth",
-#         "CRSDepTime",
-#         col("Cancelled").cast("double")
-#     )
-    
-#     # Process CRSDepTime to extract hour - this is a critical step
-#     # that needs to be consistent between training and prediction
-#     processed_df = selected_features.withColumn(
-#         "CRSDepTime_hour",
-#         when(col("CRSDepTime").isNotNull(),
-#              hour(coalesce(col("CRSDepTime").cast("string").cast("timestamp"), 
-#                           lit("00:00:00").cast("timestamp")))
-#         ).otherwise(0)
-#     )
-    
-#     # Fill null values with sensible defaults
-#     processed_df = processed_df.na.fill({
-#         "Month": 1,
-#         "DayofMonth": 1,
-#         "CRSDepTime_hour": 0,
-#         "Cancelled": 0.0
-#     })
-    
-#     return processed_df
-
-# def create_pipeline():
-#     """
-#     Create the ML pipeline with consistent feature processing steps.
-#     Each stage of the pipeline is documented for clarity.
-#     """
-#     # Handle categorical variables for origin airport
-#     origin_indexer = StringIndexer(
-#         inputCol="Origin", 
-#         outputCol="Origin_indexed",
-#         handleInvalid="keep"  # Handle new categories gracefully
-#     )
-    
-#     # Handle categorical variables for destination airport
-#     dest_indexer = StringIndexer(
-#         inputCol="Dest", 
-#         outputCol="Dest_indexed",
-#         handleInvalid="keep"
-#     )
-    
-#     # Combine all features into a single vector
-#     # Note that we use CRSDepTime_hour instead of DepHour
-#     assembler = VectorAssembler(
-#         inputCols=[
-#             "Origin_indexed",
-#             "Dest_indexed",
-#             "Month",
-#             "DayofMonth",
-#             "CRSDepTime_hour"
-#         ],
-#         outputCol="features",
-#         handleInvalid="keep"
-#     )
-    
-#     # Scale features to improve model performance
-#     scaler = StandardScaler(
-#         inputCol="features",
-#         outputCol="scaled_features",
-#         withStd=True,
-#         withMean=True
-#     )
-    
-#     # Define the logistic regression model
-#     lr = LogisticRegression(
-#         featuresCol="scaled_features",
-#         labelCol="Cancelled",
-#         maxIter=10
-#     )
-    
-#     # Combine all stages into a single pipeline
-#     return Pipeline(stages=[
-#         origin_indexer,
-#         dest_indexer,
-#         assembler,
-#         scaler,
-#         lr
-#     ])
-
-# def prepare_prediction_data(origin, dest, date, time):
-#     """
-#     Prepare a single row of data for prediction.
-#     This function ensures the input data matches the training data structure.
-#     """
-#     # Create a schema that matches our processed training data
-#     schema = StructType([
-#         StructField("Origin", StringType(), True),
-#         StructField("Dest", StringType(), True),
-#         StructField("Month", IntegerType(), True),
-#         StructField("DayofMonth", IntegerType(), True),
-#         StructField("CRSDepTime", IntegerType(), True),
-#         StructField("Cancelled", DoubleType(), True)
-#     ])
-    
-#     # Create the input data with the same structure as training data
-#     input_data = spark.createDataFrame(
-#         [(
-#             origin,
-#             dest,
-#             date.month,
-#             date.day,
-#             int(f"{time.hour:02d}{time.minute:02d}"),
-#             0.0  # Dummy value for Cancelled
-#         )],
-#         schema=schema
-#     )
-    
-#     # Apply the same transformation as training data
-#     return input_data.withColumn(
-#         "CRSDepTime_hour",
-#         hour(coalesce(col("CRSDepTime").cast("string").cast("timestamp"), 
-#                      lit("00:00:00").cast("timestamp")))
-#     )
-
-
-# def get_trained_model(df):
-#     try:
-#         processed_df = prepare_training_data(df)
-#         pipeline = create_pipeline()
-#         return pipeline.fit(processed_df)
-#     except Exception as e:
-#         st.error(f"Error during model training: {str(e)}")
-#         return None

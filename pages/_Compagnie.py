@@ -182,8 +182,8 @@ with colonne_tab4[1]:
 
     percentuali_ritardo_compagnia = spark_to_pandas(percentuali_cause_ritardo(filtro_compagnia=compagnia_selezionata,causa_specifica=None,data_inizio=selezione_data_cause_ritardi_compagnia[0].date(),data_fine=selezione_data_cause_ritardi_compagnia[1].date(),stato=None,aeroporto=None))
     percentuali_ritardo_compagnia = percentuali_ritardo_compagnia.transpose()
-
     st.bar_chart(data=percentuali_ritardo_compagnia,x=None,y=None,color=None,x_label="Percentuale",y_label="Causa",horizontal=True,use_container_width=True)
+    
     st.markdown('#### Ritardi medi per compagnia')
     st.markdown("Il grafico mostra l'andamento dei ritardi medi della compagnia. È possibile confrontare con altre compagnie e visualizzare i dati mensili o giornalieri.")
     
