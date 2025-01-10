@@ -47,12 +47,3 @@ Assicurati che:
 - Le configurazioni necessarie per Spark e Streamlit siano correttamente impostate.
 - Se stai lavorando su una macchina locale, il file `Home.py` si trovi nella directory principale del progetto.
 
-## Contributi
-Sentiti libero di contribuire al progetto tramite:
-- Pull Request
-- Segnalazioni di bug
-- Suggerimenti per nuove funzionalità
-
-## Licenza
-Questo progetto è rilasciato sotto la licenza MIT. Consulta il file `LICENSE` per maggiori dettagli.
-

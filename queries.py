@@ -17,11 +17,6 @@ spark.sparkContext.setLogLevel("OFF")
 #folder_path = r"C:\Users\giuse\Desktop\UNIVERSITA'\MAGISTRALE\1° ANNO\1° SEMESTRE\MODELLI E TECNICHE PER BIG DATA\PROGETTO\DATI"
 file_list = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.csv')]
 
-#df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).cache()
-
-#df.printSchema()
-
-
 df = spark.read.options(delimiter=',').csv(file_list, header=True, inferSchema=True).drop("_c109").cache()
 
 
