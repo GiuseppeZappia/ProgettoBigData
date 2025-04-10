@@ -25,7 +25,7 @@ Assicurati di avere installati i seguenti strumenti e librerie:
 ## Installazione
 1. Clona questa repository sul tuo computer locale:
    ```bash
-   git clone https://github.com/tuo-username/ProgettoBigData.git
+   git clone https://github.com/GiuseppeZappia/ProgettoBigData.git
    ```
 
 2. Naviga nella directory del progetto:
